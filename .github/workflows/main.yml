@@ -68,7 +68,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           artifact_name: webcatalogmaster # Reference uploaded artifact
-          # ... other deployment options (optional)
+          cname: balaji.catalogadmin.github.io
 
       - name: Print Deployment URL
         run: |
