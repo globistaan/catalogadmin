@@ -67,7 +67,7 @@ jobs:
         uses: actions/deploy-pages@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifact_name: excelmap # Reference uploaded artifact
+          artifact_name: webcatalogmaster # Reference uploaded artifact
           # ... other deployment options (optional)
 
       - name: Print Deployment URL
