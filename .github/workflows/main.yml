@@ -24,7 +24,7 @@ jobs:
         with:
           envkey_API_GATEWAY_URL: ${{ secrets.API_GATEWAY_URL }}
           envkey_SERVER_EXCEL_NAME: ${{ secrets.SERVER_EXCEL_NAME }}
-          envkey_SERVER_EXCEL_URL: ${{ env.SERVER_EXCEL_URL }}
+          envkey_SERVER_EXCEL_URL: ${{ secrets.SERVER_EXCEL_URL }}
           file_name: .env
           directory: .
           fail_on_empty: false
