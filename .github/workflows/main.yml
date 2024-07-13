@@ -52,7 +52,7 @@ jobs:
         run: flutter pub get
 
       - name: Build web app
-        run: flutter build web
+        run: flutter build web --base-href "/catalogadmin/"
 
       - name: Upload build artifacts
         uses: actions/upload-pages-artifact@v3
