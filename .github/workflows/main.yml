@@ -60,7 +60,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-pages-artifact@v3
         with:
-          name: webcatalogmaster  # Name for your artifact
+          name: webcatalogmaster-${{ github.run_id }}  # Name for your artifact
           path: build/web  # Path to your built web app files
 
       - name: Deploy to GitHub Pages
@@ -68,7 +68,7 @@ jobs:
         uses: actions/deploy-pages@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifact_name: webcatalogmaster # Reference uploaded artifact
+          artifact_name: webcatalogmaster-${{ github.run_id }} # Reference uploaded artifact
 
       - name: Print Deployment URL
         run: |
