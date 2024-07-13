@@ -1,4 +1,4 @@
-name: Flutter Deploy
+name: catalogadmin Deploy
 
 on:
   push:
@@ -9,8 +9,6 @@ permissions:
   contents: write
   pages: write
   id-token: write
-
-
 
 jobs:
   build_and_deploy:
@@ -25,9 +23,9 @@ jobs:
         uses: SpicyPizza/create-envfile@v2.0
         with:
           envs: |
-            API_GATEWAY_URL: ${{ secrets.API_GATEWAY_URL }}
-            SERVER_EXCEL_NAME: ${{ secrets.SERVER_EXCEL_NAME }}
-            SERVER_EXCEL_URL: ${{ env.SERVER_EXCEL_URL }}
+            API_GATEWAY_URL=${{ secrets.API_GATEWAY_URL }}
+            SERVER_EXCEL_NAME=${{ secrets.SERVER_EXCEL_NAME }}
+            SERVER_EXCEL_URL=${{ env.SERVER_EXCEL_URL }}
           file_name: .env
           directory: '.'
 
@@ -37,7 +35,6 @@ jobs:
           echo $API_GATEWAY_URL
           echo $SERVER_EXCEL_NAME
           echo $SERVER_EXCEL_URL
-          
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
