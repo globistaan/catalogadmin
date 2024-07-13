@@ -22,12 +22,13 @@ jobs:
       - name: Create .env file
         uses: SpicyPizza/create-envfile@v2.0
         with:
-          envs: |
-            API_GATEWAY_URL=${{ secrets.API_GATEWAY_URL }}
-            SERVER_EXCEL_NAME=${{ secrets.SERVER_EXCEL_NAME }}
-            SERVER_EXCEL_URL=${{ env.SERVER_EXCEL_URL }}
+          envkey_API_GATEWAY_URL: ${{ secrets.API_GATEWAY_URL }}
+          envkey_SERVER_EXCEL_NAME: ${{ secrets.SERVER_EXCEL_NAME }}
+          envkey_SERVER_EXCEL_URL: ${{ env.SERVER_EXCEL_URL }}
           file_name: .env
-          directory: '.'
+          directory: .
+          fail_on_empty: false
+          sort_keys: false
 
       - name: Use .env file
         run: |
