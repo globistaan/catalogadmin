@@ -355,8 +355,9 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     logger.d('Fetching data on page load');
     var s3excelUrl = dotenv.env['SERVER_EXCEL_URL'];
     final data = await streamExcelData(s3excelUrl!);
-    final excelFile = Excel.decodeBytes(data);
-    if (data.isNotEmpty) {
+    var excelFile = null;
+    if (data.isNotEmpty && data.length>0) {
+        excelFile =  Excel.decodeBytes(data);
       setState(() {
         gridItems.clear();
         final sheet = excelFile.tables[excelFile.tables.keys.first];
