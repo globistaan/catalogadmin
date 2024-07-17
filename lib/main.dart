@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Product Master Data'),
+          title: const Text('Product Master Data', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),),
         ),
         body: const MasterDataUpload(),
       ),
