@@ -341,7 +341,10 @@ class _MasterDataUpload extends State<MasterDataUpload> {
 
   Future<Uint8List> streamExcelData(String s3Url) async {
     logger.d('Streaming Excel data from URL: $s3Url');
-    final response = await http.get(Uri.parse(s3Url));
+    final response = await http.get(Uri.parse(s3Url), headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+    });
     if (response.statusCode == 200) {
       logger.d('Excel data streamed successfully');
       return response.bodyBytes; // Directly get Uint8List from response
