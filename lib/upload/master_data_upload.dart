@@ -355,7 +355,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     logger.d('Fetching data on page load');
     var s3excelUrl = dotenv.env['SERVER_EXCEL_URL'];
     logger.d('SERVER_EXCEL_URL='+ s3excelUrl!);
-    final data = await streamExcelData(s3excelUrl!);
+    final data = await streamExcelData(s3excelUrl);
     var excelFile = null;
     if (data.isNotEmpty && data.length>0) {
         excelFile =  Excel.decodeBytes(data);
@@ -404,7 +404,6 @@ class _MasterDataUpload extends State<MasterDataUpload> {
             final sheet = excelFile.tables[excelFile.tables.keys.first];
             if (sheet != null) {
               for (var row in sheet.rows.skip(1)) { // Skip header row
-                if (row.length >= 5) {
                   // Safely extract itemId, itemDescription, category, subCategory, and image
                   String excelItemid = row[0]?.value?.toString() ?? '';
                   String excelItemdescription = row[1]?.value?.toString() ?? '';
@@ -418,7 +417,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                     category: excelCategory,
                     subCategory: excelSubcategory,
                   ));
-                }
+
               }
             }
           });
