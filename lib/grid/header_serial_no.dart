@@ -13,15 +13,9 @@ class HeaderSrNoWidget extends StatelessWidget {
       child: Container(
         width: 40,
         alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(vertical: 12.0),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey[400]!, width: 2),
-          ),
-        ),
         child: Text(
           title,
-          textAlign: TextAlign.left,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,

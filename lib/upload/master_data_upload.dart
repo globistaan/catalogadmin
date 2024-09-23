@@ -26,7 +26,7 @@ class MasterDataUpload extends StatefulWidget {
 class _MasterDataUpload extends State<MasterDataUpload> {
   final logger = Logger();
   List<GridItem> gridItems = [
-    GridItem(itemId: '', itemDescription: '', image: '')
+    GridItem(itemId: '', itemDescription: '', image: '', price: '', remarks: '')
   ];
 
   @override
@@ -52,11 +52,13 @@ class _MasterDataUpload extends State<MasterDataUpload> {
         children: [
           const Row(
             children: [
-              HeaderSrNoWidget(title: 'S.No'),
+              HeaderSrNoWidget(title: 'Sr.No'),
               Expanded(child: HeaderWidget(title: 'Item Id')),
               Expanded(child: HeaderWidget(title: 'Item Name')),
               Expanded(child: HeaderWidget(title: 'Category')),
               Expanded(child: HeaderWidget(title: 'Subcategory')),
+              Expanded(child: HeaderWidget(title: 'Price (INR)')),
+              Expanded(child: HeaderWidget(title: 'Remarks')),
               Expanded(child: HeaderWidget(title: 'Image')),
               SizedBox(width: 24), // Space for remove icon
             ],
@@ -99,8 +101,8 @@ class _MasterDataUpload extends State<MasterDataUpload> {
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
-          TextCell(text: (index + 1).toString()),
-          Expanded(child: EditableTextCell(text: item.itemId, onChanged: (value) {
+        Container(width: 40, child:  TextCell( text: (index + 1).toString())),
+          Expanded(flex:1, child: EditableTextCell(text: item.itemId, onChanged: (value) {
             logger.d('Item Id changed to: $value at index: $index');
             item.itemId = value;
           })),
@@ -115,6 +117,14 @@ class _MasterDataUpload extends State<MasterDataUpload> {
           Expanded(child: EditableTextCell(text: item.subCategory, onChanged: (value) {
             logger.d('Subcategory changed to: $value at index: $index');
             item.subCategory = value;
+          })),
+          Expanded(child: EditableTextCell(text: item.price, onChanged: (value) {
+            logger.d('Price changed to: $value at index: $index');
+            item.price = value;
+          })),
+          Expanded(child: EditableTextCell(text: item.remarks, onChanged: (value) {
+            logger.d('Remarks changed to: $value at index: $index');
+            item.remarks = value;
           })),
           Expanded(
             child: Align( // Wrap _buildImageCell in Align for center alignment
@@ -242,7 +252,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     final sheet = excel['Sheet1'];
 
     // Add the header row
-    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory', 'Image']);
+    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory','Price','Remarks', 'Image']);
 
     for (var item in gridItems) {
       sheet.appendRow([
@@ -250,7 +260,9 @@ class _MasterDataUpload extends State<MasterDataUpload> {
         item.itemDescription,
         item.category,
         item.subCategory,
-        item.image,
+        item.price,
+        item.remarks,
+        item.image
       ]);
     }
 
@@ -265,7 +277,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     final sheet = excel['Sheet1'];
 
     // Add the header row
-    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory', 'Image']);
+    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory','Price','Remarks', 'Image']);
 
     for (var item in gridItems) {
       sheet.appendRow([
@@ -273,7 +285,9 @@ class _MasterDataUpload extends State<MasterDataUpload> {
         item.itemDescription,
         item.category,
         item.subCategory,
-        item.image,
+        item.price,
+        item.remarks,
+        item.image
       ]);
     }
 
@@ -372,13 +386,17 @@ class _MasterDataUpload extends State<MasterDataUpload> {
               String excelItemdescription = row[1]?.value?.toString() ?? '';
               String excelCategory = row[2]?.value?.toString() ?? '';
               String excelSubcategory = row[3]?.value?.toString() ?? '';
-              String excelImage = row[4]?.value?.toString() ?? '';
+              String price = row[4]?.value?.toString() ?? '';
+              String remarks = row[5]?.value?.toString() ?? '';
+              String excelImage = row[6]?.value?.toString() ?? '';
               gridItems.add(GridItem(
                 itemId: excelItemid,
                 itemDescription: excelItemdescription,
                 image: excelImage,
                 category: excelCategory,
                 subCategory: excelSubcategory,
+                price: price,
+                remarks: remarks
               ));
 
           }
@@ -412,13 +430,18 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                   String excelItemdescription = row[1]?.value?.toString() ?? '';
                   String excelCategory = row[2]?.value?.toString() ?? ''; // Read category
                   String excelSubcategory = row[3]?.value?.toString() ?? ''; // Read subCategory
-                  String excelImage = row[4]?.value?.toString() ?? '';
+                  String price = row[4]?.value?.toString() ?? '';
+                  String remarks = row[5]?.value?.toString() ?? '';
+                  String excelImage = row[6]?.value?.toString() ?? '';
+
                   gridItems.add(GridItem(
                     itemId: excelItemid,
                     itemDescription: excelItemdescription,
-                    image: excelImage,
                     category: excelCategory,
                     subCategory: excelSubcategory,
+                    price: price,
+                    remarks: remarks,
+                    image: excelImage,
                   ));
 
               }

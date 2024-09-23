@@ -9,15 +9,8 @@ class TextCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 40,
+      width: 10,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-        margin: const EdgeInsets.symmetric(horizontal: 4.0),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
-        ),
         child: Text(
           text,
           textAlign: TextAlign.center,
