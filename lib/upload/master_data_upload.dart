@@ -58,7 +58,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
               Expanded(child: HeaderWidget(title: 'Category')),
               Expanded(child: HeaderWidget(title: 'Subcategory')),
               Expanded(child: HeaderWidget(title: 'Price (INR)')),
-              Expanded(child: HeaderWidget(title: 'Remarks')),
+              Expanded(child: HeaderWidget(title: 'Specifications')),
               Expanded(child: HeaderWidget(title: 'Image')),
               SizedBox(width: 24), // Space for remove icon
             ],
@@ -123,7 +123,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
             item.price = value;
           })),
           Expanded(child: EditableTextCell(text: item.remarks, onChanged: (value) {
-            logger.d('Remarks changed to: $value at index: $index');
+            logger.d('Specifications changed to: $value at index: $index');
             item.remarks = value;
           })),
           Expanded(
@@ -252,7 +252,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     final sheet = excel['Sheet1'];
 
     // Add the header row
-    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory','Price','Remarks', 'Image']);
+    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory','Price','Specifications', 'Image']);
 
     for (var item in gridItems) {
       sheet.appendRow([
@@ -277,7 +277,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     final sheet = excel['Sheet1'];
 
     // Add the header row
-    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory','Price','Remarks', 'Image']);
+    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory','Price','Specifications', 'Image']);
 
     for (var item in gridItems) {
       sheet.appendRow([
