@@ -26,7 +26,7 @@ class MasterDataUpload extends StatefulWidget {
 class _MasterDataUpload extends State<MasterDataUpload> {
   final logger = Logger();
   List<GridItem> gridItems = [
-    GridItem(itemId: '', itemDescription: '', image: '', price: '', remarks: '')
+    GridItem(itemId: '', itemDescription: '', images: [], price: '', remarks: '')
   ];
 
   @override
@@ -144,32 +144,13 @@ class _MasterDataUpload extends State<MasterDataUpload> {
       onTap: () async {
         html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
         uploadInput.accept = 'image/*';
+        uploadInput.multiple = true;
         uploadInput.click();
 
         uploadInput.onChange.listen((e) async {
           final files = uploadInput.files;
-          if (files?.length == 1) {
-            final file = files![0];
-            final reader = html.FileReader();
-
-            reader.readAsArrayBuffer(file);
-
-            reader.onLoadEnd.listen((e) async {
-              try {
-                // 1. Get Presigned URL
-                final presignedUrl = await getPresignedUrl(file.name);
-                logger.d('Presigned URL obtained: $presignedUrl');
-                // 2. Upload to S3
-                await uploadToS3(presignedUrl, reader.result as List<int>);
-                logger.d('Image uploaded successfully for item: ${item.itemId}');
-                // 3. Update UI (Display image and link)
-                setState(() {
-                  item.image = presignedUrl.split('?').first;
-                });
-              } catch (e) {
-                logger.e('Error during upload for item: ${item.itemId}, error: $e');
-              }
-            });
+          for (var file in files!) {
+            await processFileUpload(file, item);
           }
         });
       },
@@ -184,7 +165,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.grey[300]!),
             ),
-            child: item.image.isEmpty
+            child: item.images.isEmpty
                 ? Center(
               child: Text(
                 'Click to Upload Image',
@@ -193,13 +174,13 @@ class _MasterDataUpload extends State<MasterDataUpload> {
             )
                 : ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(item.image, fit: BoxFit.cover),
+              child: Image.network(item.images[0], fit: BoxFit.cover),
             ),
           ),
-          if (item.image.isNotEmpty) // Show cross only if there's an image
+          if (item.images.isNotEmpty) // Show cross only if there's an image
             ClearImageButton(clearImage: (item) {
               setState(() {
-                item.image = ''; // Clear the image
+                item.images = []; // Clear the image
               });
             },
               item: item,  // Pass the item to ClearImageButton
@@ -219,10 +200,37 @@ class _MasterDataUpload extends State<MasterDataUpload> {
   void _addRow() {
     logger.d('Adding a new row');
     setState(() {
-      gridItems.add(GridItem(itemId: '', itemDescription: '', category: '', subCategory: '', image: ''));
+      gridItems.add(GridItem(itemId: '', itemDescription: '', category: '', subCategory: '', images: []));
     });
   }
 
+  Future<void> processFileUpload (file,item) async{
+
+      final reader = html.FileReader();
+
+      reader.readAsArrayBuffer(file);
+
+      reader.onLoadEnd.listen((e) async {
+        try {
+          // 1. Get Presigned URL
+          final presignedUrl = await getPresignedUrl(file.name);
+          logger.d('Presigned URL obtained: $presignedUrl');
+          // 2. Upload to S3
+          await uploadToS3(presignedUrl, reader.result as List<int>);
+          logger.d('Image uploaded successfully for item: ${item.itemId}');
+          // 3. Update UI (Display image and link)
+          setState(() {
+            if (item.images == null) {
+              item.images = []; // Initialize if null
+            }
+            item.images.add(presignedUrl.split('?').first);
+          });
+        } catch (e) {
+          logger.e('Error during upload for item: ${item.itemId}, error: $e');
+        }
+      });
+
+}
   Future<String> getPresignedUrl(String fileName) async {
     var apiGatewayUrl =  dotenv.env["API_GATEWAY_URL"]; // Replace with your actual URL
 
@@ -262,7 +270,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
         item.subCategory,
         item.price,
         item.remarks,
-        item.image
+        item.images.join(",")
       ]);
     }
 
@@ -287,7 +295,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
         item.subCategory,
         item.price,
         item.remarks,
-        item.image
+        item.images.join(",")
       ]);
     }
 
@@ -388,11 +396,11 @@ class _MasterDataUpload extends State<MasterDataUpload> {
               String excelSubcategory = row[3]?.value?.toString() ?? '';
               String price = row[4]?.value?.toString() ?? '';
               String remarks = row[5]?.value?.toString() ?? '';
-              String excelImage = row[6]?.value?.toString() ?? '';
+              String excelImages = row[6]?.value?.toString() ?? '';
               gridItems.add(GridItem(
                 itemId: excelItemid,
                 itemDescription: excelItemdescription,
-                image: excelImage,
+                images: excelImages.split(","),
                 category: excelCategory,
                 subCategory: excelSubcategory,
                 price: price,
@@ -432,7 +440,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                   String excelSubcategory = row[3]?.value?.toString() ?? ''; // Read subCategory
                   String price = row[4]?.value?.toString() ?? '';
                   String remarks = row[5]?.value?.toString() ?? '';
-                  String excelImage = row[6]?.value?.toString() ?? '';
+                  String excelImages = row[6]?.value?.toString() ?? '';
 
                   gridItems.add(GridItem(
                     itemId: excelItemid,
@@ -441,7 +449,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                     subCategory: excelSubcategory,
                     price: price,
                     remarks: remarks,
-                    image: excelImage,
+                    images: excelImages.split(","),
                   ));
 
               }

@@ -1,7 +1,7 @@
 class GridItem {
   String itemId;
   String itemDescription;
-  String image;
+  List<String> images;
   String? category;
   String? subCategory;
   String? price;
@@ -10,7 +10,7 @@ class GridItem {
   GridItem({
     required this.itemId,
     required this.itemDescription,
-    required this.image,
+    required this.images,
     this.category,
     this.subCategory,
     this.price,
