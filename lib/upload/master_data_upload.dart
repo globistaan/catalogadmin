@@ -6,10 +6,10 @@ import 'dart:html' as html;
 import 'package:flutter_excel/excel.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
-import 'package:webcatalogmaster/buttons/delete_row_button.dart';
 
 import '../buttons/clear_image_button.dart';
 import '../buttons/custom_elevated_button.dart';
+import '../buttons/delete_row_button.dart';
 import '../grid/editable_text_cell.dart';
 import '../grid/header.dart';
 import '../grid/header_serial_no.dart';
@@ -25,13 +25,12 @@ class MasterDataUpload extends StatefulWidget {
 
 class _MasterDataUpload extends State<MasterDataUpload> {
   final logger = Logger();
-  List<GridItem> gridItems = [
-    GridItem(itemId: '', itemDescription: '', images: [], price: '', remarks: '')
-  ];
+  List<GridItem> gridItems = [];
+  bool _isLoading = true; // Loading state
 
   @override
   void initState() {
-    super.initState(); // Always call super.initState() first
+    super.initState();
     logger.d('initState called');
     _fetchDataonPageLoad();
   }
@@ -65,7 +64,9 @@ class _MasterDataUpload extends State<MasterDataUpload> {
           ),
           Divider(thickness: 2, color: Colors.grey[400]),
           Expanded(
-            child: ListView.builder(
+            child: _isLoading
+                ? _loadingBubble()
+                : ListView.builder(
               itemCount: gridItems.length,
               itemBuilder: (context, index) {
                 return _buildRow(index);
@@ -74,12 +75,12 @@ class _MasterDataUpload extends State<MasterDataUpload> {
           ),
           const SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center, // Centers the buttons along the main axis (horizontally)
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CustomElevatedButton(onPressed: _uploadFromExcel, text: 'Upload From Excel'),
-              const SizedBox(width: 16), // Optional: Adds spacing between buttons
+              const SizedBox(width: 16),
               CustomElevatedButton(onPressed: _addRow, text: 'Add Row'),
-              const SizedBox(width: 16), // Optional: Adds spacing between buttons
+              const SizedBox(width: 16),
               CustomElevatedButton(onPressed: _deleteAll, text: 'Delete All'),
               const Spacer(),
               CustomElevatedButton(onPressed: saveChanges, text: 'Save Changes'),
@@ -94,6 +95,22 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     );
   }
 
+  Widget _loadingBubble() {
+    return Center(
+      child: Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.blueAccent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          "Data is loading...",
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      ),
+    );
+  }
+
   Widget _buildRow(int index) {
     final item = gridItems[index];
     logger.d('Building row for index: $index with item: ${item.itemId}');
@@ -101,8 +118,8 @@ class _MasterDataUpload extends State<MasterDataUpload> {
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
-        Container(width: 40, child:  TextCell( text: (index + 1).toString())),
-          Expanded(flex:1, child: EditableTextCell(text: item.itemId, onChanged: (value) {
+          Container(width: 40, child: TextCell(text: (index + 1).toString())),
+          Expanded(flex: 1, child: EditableTextCell(text: item.itemId, onChanged: (value) {
             logger.d('Item Id changed to: $value at index: $index');
             item.itemId = value;
           })),
@@ -127,12 +144,12 @@ class _MasterDataUpload extends State<MasterDataUpload> {
             item.remarks = value;
           })),
           Expanded(
-            child: Align( // Wrap _buildImageCell in Align for center alignment
+            child: Align(
               alignment: Alignment.center,
               child: _buildImageCell(item),
             ),
           ),
-         RemoveRowButton(index: index, onPressed: () =>_removeRow(index)),
+          RemoveRowButton(index: index, onPressed: () => _removeRow(index)),
         ],
       ),
     );
@@ -154,7 +171,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
           }
         });
       },
-      child: Stack( // Use a Stack to overlay the cross icon
+      child: Stack(
         children: [
           Container(
             height: 100,
@@ -177,14 +194,12 @@ class _MasterDataUpload extends State<MasterDataUpload> {
               child: Image.network(item.images[0], fit: BoxFit.cover),
             ),
           ),
-          if (item.images.isNotEmpty) // Show cross only if there's an image
+          if (item.images.isNotEmpty)
             ClearImageButton(clearImage: (item) {
               setState(() {
-                item.images = []; // Clear the image
+                item.images = [];
               });
-            },
-              item: item,  // Pass the item to ClearImageButton
-            ),
+            }, item: item),
         ],
       ),
     );
@@ -204,36 +219,30 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     });
   }
 
-  Future<void> processFileUpload (file,item) async{
+  Future<void> processFileUpload(file, item) async {
+    final reader = html.FileReader();
+    reader.readAsArrayBuffer(file);
 
-      final reader = html.FileReader();
+    reader.onLoadEnd.listen((e) async {
+      try {
+        final presignedUrl = await getPresignedUrl(file.name);
+        logger.d('Presigned URL obtained: $presignedUrl');
+        await uploadToS3(presignedUrl, reader.result as List<int>);
+        logger.d('Image uploaded successfully for item: ${item.itemId}');
+        setState(() {
+          if (item.images == null) {
+            item.images = [];
+          }
+          item.images.add(presignedUrl.split('?').first);
+        });
+      } catch (e) {
+        logger.e('Error during upload for item: ${item.itemId}, error: $e');
+      }
+    });
+  }
 
-      reader.readAsArrayBuffer(file);
-
-      reader.onLoadEnd.listen((e) async {
-        try {
-          // 1. Get Presigned URL
-          final presignedUrl = await getPresignedUrl(file.name);
-          logger.d('Presigned URL obtained: $presignedUrl');
-          // 2. Upload to S3
-          await uploadToS3(presignedUrl, reader.result as List<int>);
-          logger.d('Image uploaded successfully for item: ${item.itemId}');
-          // 3. Update UI (Display image and link)
-          setState(() {
-            if (item.images == null) {
-              item.images = []; // Initialize if null
-            }
-            item.images.add(presignedUrl.split('?').first);
-          });
-        } catch (e) {
-          logger.e('Error during upload for item: ${item.itemId}, error: $e');
-        }
-      });
-
-}
   Future<String> getPresignedUrl(String fileName) async {
-    var apiGatewayUrl =  dotenv.env["API_GATEWAY_URL"]; // Replace with your actual URL
-
+    var apiGatewayUrl = dotenv.env["API_GATEWAY_URL"];
     try {
       final response = await http.post(
         Uri.parse(apiGatewayUrl!),
@@ -259,8 +268,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     final excel = Excel.createExcel();
     final sheet = excel['Sheet1'];
 
-    // Add the header row
-    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory','Price','Specifications', 'Image']);
+    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory', 'Price', 'Specifications', 'Image']);
 
     for (var item in gridItems) {
       sheet.appendRow([
@@ -280,12 +288,10 @@ class _MasterDataUpload extends State<MasterDataUpload> {
 
   Future<void> saveChanges() async {
     logger.d('Saving changes');
-    // Generate the Excel file from gridItems
     final excel = Excel.createExcel();
     final sheet = excel['Sheet1'];
 
-    // Add the header row
-    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory','Price','Specifications', 'Image']);
+    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory', 'Price', 'Specifications', 'Image']);
 
     for (var item in gridItems) {
       sheet.appendRow([
@@ -334,8 +340,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
   Future<void> downloadLatestFromServer() async {
     logger.d('Downloading latest data from server');
     try {
-      var s3excelUrl = dotenv.env['SERVER_EXCEL_URL'];// Replace with your actual URL
-
+      var s3excelUrl = dotenv.env['SERVER_EXCEL_URL'];
       final downloadResponse = await http.get(Uri.parse(s3excelUrl!));
       if (downloadResponse.statusCode == 200) {
         final blob = html.Blob([downloadResponse.bodyBytes]);
@@ -369,7 +374,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     });
     if (response.statusCode == 200) {
       logger.d('Excel data streamed successfully');
-      return response.bodyBytes; // Directly get Uint8List from response
+      return response.bodyBytes;
     } else {
       logger.e('Failed to load Excel data: ${response.statusCode}');
       return Uint8List(0);
@@ -379,40 +384,47 @@ class _MasterDataUpload extends State<MasterDataUpload> {
   Future<void> _fetchDataonPageLoad() async {
     logger.d('Fetching data on page load');
     var s3excelUrl = dotenv.env['SERVER_EXCEL_URL'];
-    logger.d('SERVER_EXCEL_URL='+ s3excelUrl!);
+    logger.d('SERVER_EXCEL_URL=' + s3excelUrl!);
+
+    // Simulating loading time
+    await Future.delayed(const Duration(seconds: 1));
+
     final data = await streamExcelData(s3excelUrl);
-    var excelFile = null;
-    if (data.isNotEmpty && data.length>0) {
-        excelFile =  Excel.decodeBytes(data);
+    var excelFile;
+
+    if (data.isNotEmpty && data.length > 0) {
+      excelFile = Excel.decodeBytes(data);
       setState(() {
         gridItems.clear();
         final sheet = excelFile.tables[excelFile.tables.keys.first];
         if (sheet != null) {
-          for (var row in sheet.rows.skip(1)) { // Skip header row
-              // Safely extract itemId, itemDescription, category, subCategory, and image
-              String excelItemid = row[0]?.value?.toString() ?? '';
-              String excelItemdescription = row[1]?.value?.toString() ?? '';
-              String excelCategory = row[2]?.value?.toString() ?? '';
-              String excelSubcategory = row[3]?.value?.toString() ?? '';
-              String price = row[4]?.value?.toString() ?? '';
-              String remarks = row[5]?.value?.toString() ?? '';
-              String excelImages = row[6]?.value?.toString() ?? '';
-              gridItems.add(GridItem(
-                itemId: excelItemid,
-                itemDescription: excelItemdescription,
-                images: excelImages.split(","),
-                category: excelCategory,
-                subCategory: excelSubcategory,
-                price: price,
-                remarks: remarks
-              ));
-
+          for (var row in sheet.rows.skip(1)) {
+            String excelItemid = row[0]?.value?.toString() ?? '';
+            String excelItemdescription = row[1]?.value?.toString() ?? '';
+            String excelCategory = row[2]?.value?.toString() ?? '';
+            String excelSubcategory = row[3]?.value?.toString() ?? '';
+            String price = row[4]?.value?.toString() ?? '';
+            String remarks = row[5]?.value?.toString() ?? '';
+            String excelImages = row[6]?.value?.toString() ?? '';
+            gridItems.add(GridItem(
+              itemId: excelItemid,
+              itemDescription: excelItemdescription,
+              images: excelImages.split(","),
+              category: excelCategory,
+              subCategory: excelSubcategory,
+              price: price,
+              remarks: remarks,
+            ));
           }
         }
+        _isLoading = false; // Set loading to false after data is fetched
       });
       logger.d('Data fetched and gridItems updated');
     } else {
       logger.e('Data fetched is empty');
+      setState(() {
+        _isLoading = false; // Ensure loading is false even if no data
+      });
     }
   }
 
@@ -432,26 +444,24 @@ class _MasterDataUpload extends State<MasterDataUpload> {
             gridItems.clear();
             final sheet = excelFile.tables[excelFile.tables.keys.first];
             if (sheet != null) {
-              for (var row in sheet.rows.skip(1)) { // Skip header row
-                  // Safely extract itemId, itemDescription, category, subCategory, and image
-                  String excelItemid = row[0]?.value?.toString() ?? '';
-                  String excelItemdescription = row[1]?.value?.toString() ?? '';
-                  String excelCategory = row[2]?.value?.toString() ?? ''; // Read category
-                  String excelSubcategory = row[3]?.value?.toString() ?? ''; // Read subCategory
-                  String price = row[4]?.value?.toString() ?? '';
-                  String remarks = row[5]?.value?.toString() ?? '';
-                  String excelImages = row[6]?.value?.toString() ?? '';
+              for (var row in sheet.rows.skip(1)) {
+                String excelItemid = row[0]?.value?.toString() ?? '';
+                String excelItemdescription = row[1]?.value?.toString() ?? '';
+                String excelCategory = row[2]?.value?.toString() ?? '';
+                String excelSubcategory = row[3]?.value?.toString() ?? '';
+                String price = row[4]?.value?.toString() ?? '';
+                String remarks = row[5]?.value?.toString() ?? '';
+                String excelImages = row[6]?.value?.toString() ?? '';
 
-                  gridItems.add(GridItem(
-                    itemId: excelItemid,
-                    itemDescription: excelItemdescription,
-                    category: excelCategory,
-                    subCategory: excelSubcategory,
-                    price: price,
-                    remarks: remarks,
-                    images: excelImages.split(","),
-                  ));
-
+                gridItems.add(GridItem(
+                  itemId: excelItemid,
+                  itemDescription: excelItemdescription,
+                  category: excelCategory,
+                  subCategory: excelSubcategory,
+                  price: price,
+                  remarks: remarks,
+                  images: excelImages.split(","),
+                ));
               }
             }
           });
