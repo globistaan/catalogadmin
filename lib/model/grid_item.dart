@@ -8,7 +8,7 @@ class GridItem {
   String? specifications;
   String? dimension;
   String? unit;
-  Map<String,String>? mapSlotPrice;
+  String? mapSlotPrice;
 
   GridItem({
     required this.itemId,

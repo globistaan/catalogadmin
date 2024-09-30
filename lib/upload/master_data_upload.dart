@@ -90,9 +90,10 @@ class _MasterDataUpload extends State<MasterDataUpload> {
         Expanded(child: HeaderWidget(title: 'Subcategory')),
         Expanded(child: HeaderWidget(title: 'Price (INR)')),
         Expanded(child: HeaderWidget(title: 'Specifications')),
-        Expanded(child: HeaderWidget(title: 'Image')),
         Expanded(child: HeaderWidget(title: 'Dimension')),
         Expanded(child: HeaderWidget(title: 'Unit')),
+        Expanded(child: HeaderWidget(title: 'Slot/Price Map (slot1:price1,slot2:price2}')),
+        Expanded(child: HeaderWidget(title: 'Image')),
         SizedBox(width: 24),
       ],
     );

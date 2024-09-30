@@ -34,6 +34,7 @@ class GridItemService {
           String excelImages = row[6]?.value?.toString() ?? '';
           String excelDimension = row[7]?.value?.toString() ?? '';
           String excelUnit = row[8]?.value?.toString() ?? '';
+          String excelSlotPriceMap = row[9]?.value?.toString() ?? '';
           gridItems.add(GridItem(
             itemId: excelItemid,
             itemDescription: excelItemdescription,
@@ -43,7 +44,8 @@ class GridItemService {
             price: price,
             specifications: excelSpecifications,
             dimension: excelDimension,
-            unit:excelUnit
+            unit:excelUnit,
+            mapSlotPrice: excelSlotPriceMap
           ));
         }
       }
@@ -217,6 +219,9 @@ class GridItemService {
               String price = row[4]?.value?.toString() ?? '';
               String specifications = row[5]?.value?.toString() ?? '';
               String excelImages = row[6]?.value?.toString() ?? '';
+              String excelDimension = row[7]?.value?.toString() ?? '';
+              String excelUnit = row[8]?.value?.toString() ?? '';
+              String excelSlotPriceMap = row[9]?.value?.toString() ?? '';
 
               gridItems.add(GridItem(
                 itemId: excelItemId,
@@ -226,6 +231,10 @@ class GridItemService {
                 price: price,
                 specifications: specifications,
                 images: excelImages.split(","),
+                dimension: excelDimension,
+                unit: excelUnit,
+                mapSlotPrice: excelSlotPriceMap
+
               ));
             }
           }

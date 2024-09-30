@@ -44,7 +44,7 @@ class ImageCellWidget extends StatelessWidget {
       child: Stack(
         children: [
           Container(
-            height: 100,
+            height: 75,
             width: 400,
             margin: const EdgeInsets.symmetric(horizontal: 4.0),
             decoration: BoxDecoration(
