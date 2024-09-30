@@ -30,8 +30,10 @@ class GridItemService {
           String excelCategory = row[2]?.value?.toString() ?? '';
           String excelSubcategory = row[3]?.value?.toString() ?? '';
           String price = row[4]?.value?.toString() ?? '';
-          String specifications = row[5]?.value?.toString() ?? '';
+          String excelSpecifications = row[5]?.value?.toString() ?? '';
           String excelImages = row[6]?.value?.toString() ?? '';
+          String excelDimension = row[7]?.value?.toString() ?? '';
+          String excelUnit = row[8]?.value?.toString() ?? '';
           gridItems.add(GridItem(
             itemId: excelItemid,
             itemDescription: excelItemdescription,
@@ -39,7 +41,9 @@ class GridItemService {
             category: excelCategory,
             subCategory: excelSubcategory,
             price: price,
-            specifications: specifications,
+            specifications: excelSpecifications,
+            dimension: excelDimension,
+            unit:excelUnit
           ));
         }
       }
@@ -102,7 +106,7 @@ class GridItemService {
     final excel = Excel.createExcel();
     final sheet = excel['Sheet1'];
 
-    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory', 'Price', 'Specifications', 'Image']);
+    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory', 'Price', 'Specifications', 'Image','Dimension', 'Unit', 'SlotPriceMapping']);
 
     for (var item in gridItems) {
       sheet.appendRow([
@@ -111,8 +115,11 @@ class GridItemService {
         item.category,
         item.subCategory,
         item.price,
-        item.remarks,
-        item.images.join(",")
+        item.specifications,
+        item.images.join(","),
+        item.dimension,
+        item.unit,
+        item.mapSlotPrice
       ]);
     }
 
@@ -147,7 +154,7 @@ class GridItemService {
     final excel = Excel.createExcel();
     final sheet = excel['Sheet1'];
 
-    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory', 'Price', 'Specifications', 'Image']);
+    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory', 'Price', 'Specifications', 'Image','Dimension', 'Unit', 'SlotPriceMapping']);
 
     for (var item in gridItems) {
       sheet.appendRow([
@@ -158,6 +165,9 @@ class GridItemService {
         item.price,
         item.specifications,
         item.images.join(","),
+        item.dimension,
+        item.unit,
+        item.mapSlotPrice
       ]);
     }
 

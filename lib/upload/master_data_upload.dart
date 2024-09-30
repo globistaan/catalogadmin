@@ -52,7 +52,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                 : ListView.builder(
               itemCount: gridItems.length,
               itemBuilder: (context, index) {
-                return GridRowWidget(
+                  return GridRowWidget(
                   index: index,
                   item: gridItems[index],
                   onRemove: _removeRow,
@@ -91,6 +91,8 @@ class _MasterDataUpload extends State<MasterDataUpload> {
         Expanded(child: HeaderWidget(title: 'Price (INR)')),
         Expanded(child: HeaderWidget(title: 'Specifications')),
         Expanded(child: HeaderWidget(title: 'Image')),
+        Expanded(child: HeaderWidget(title: 'Dimension')),
+        Expanded(child: HeaderWidget(title: 'Unit')),
         SizedBox(width: 24),
       ],
     );

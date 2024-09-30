@@ -31,6 +31,8 @@ class GridRowWidget extends StatelessWidget {
           },onImageUploadFailed: () {
             onGridRowImageUploadFailed();
           })),
+          Expanded(child: EditableTextCell(text: item.dimension ?? '', onChanged: (value) => item.dimension = value)),
+          Expanded(child: EditableTextCell(text: item.unit ?? '', onChanged: (value) => item.unit = value)),
           RemoveRowButton(index: index, onPressed: () => onRemove(index)),
         ],
       ),

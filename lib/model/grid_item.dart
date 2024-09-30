@@ -6,6 +6,9 @@ class GridItem {
   String? subCategory;
   String? price;
   String? specifications;
+  String? dimension;
+  String? unit;
+  Map<String,String>? mapSlotPrice;
 
   GridItem({
     required this.itemId,
@@ -14,6 +17,9 @@ class GridItem {
     this.category,
     this.subCategory,
     this.price,
-    this.specifications
+    this.specifications,
+    this.dimension,
+    this.unit,
+    this.mapSlotPrice
   });
 }
