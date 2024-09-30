@@ -61,6 +61,13 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                      gridItems[index].images.clear();
                      gridItems[index].images.addAll(imageUrls);
                    });
+                   ScaffoldMessenger.of(context).showSnackBar(
+                     const SnackBar(content: Text('Image(s) uploaded successfully')),
+                   );
+                }, onGridRowImageUploadFailed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Image(s) upload failed'))
+                  );
                 },
                 );
               },

@@ -10,7 +10,8 @@ class GridRowWidget extends StatelessWidget {
   final GridItem item;
   final Function(int) onRemove;
   final Function(List<String>) onGridRowImageUploaded;
-  const GridRowWidget({required this.index, required this.item, required this.onRemove, Key? key, required this.onGridRowImageUploaded}) : super(key: key);
+  final Function() onGridRowImageUploadFailed;
+  const GridRowWidget({required this.index, required this.item, required this.onRemove, Key? key, required this.onGridRowImageUploaded, required this.onGridRowImageUploadFailed}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +28,8 @@ class GridRowWidget extends StatelessWidget {
           Expanded(child: EditableTextCell(text: item.specifications ?? '', onChanged: (value) => item.specifications = value)),
           Expanded(child: ImageCellWidget(item: item, onImageUploaded: (imageUrls){
             onGridRowImageUploaded(imageUrls);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Image(s) uploaded successfully')),
-            );
-
           },onImageUploadFailed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Image(s) upload failed'))
-            );
+            onGridRowImageUploadFailed();
           })),
           RemoveRowButton(index: index, onPressed: () => onRemove(index)),
         ],
