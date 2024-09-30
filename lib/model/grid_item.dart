@@ -5,7 +5,7 @@ class GridItem {
   String? category;
   String? subCategory;
   String? price;
-  String? remarks;
+  String? specifications;
 
   GridItem({
     required this.itemId,
@@ -14,6 +14,6 @@ class GridItem {
     this.category,
     this.subCategory,
     this.price,
-    this.remarks
+    this.specifications
   });
 }

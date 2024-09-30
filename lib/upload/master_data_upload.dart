@@ -1,20 +1,15 @@
-import 'dart:convert';
+import 'dart:html' as html;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'dart:html' as html;
 import 'package:flutter_excel/excel.dart';
-import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
-
-import '../buttons/clear_image_button.dart';
-import '../buttons/custom_elevated_button.dart';
-import '../buttons/delete_row_button.dart';
-import '../grid/editable_text_cell.dart';
+import '../buttons/button_widget.dart';
+import '../grid/grid_row_widget.dart';
 import '../grid/header.dart';
 import '../grid/header_serial_no.dart';
-import '../grid/text_cell.dart';
+import '../grid/loading_widget.dart';
 import '../model/grid_item.dart';
+import '../service/grid_item_service.dart';
 
 class MasterDataUpload extends StatefulWidget {
   const MasterDataUpload({super.key});
@@ -26,13 +21,13 @@ class MasterDataUpload extends StatefulWidget {
 class _MasterDataUpload extends State<MasterDataUpload> {
   final logger = Logger();
   List<GridItem> gridItems = [];
-  bool _isLoading = true; // Loading state
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     logger.d('initState called');
-    _fetchDataonPageLoad();
+    _fetchDataOnPageLoad();
   }
 
   @override
@@ -49,159 +44,98 @@ class _MasterDataUpload extends State<MasterDataUpload> {
       ),
       child: Column(
         children: [
-          const Row(
-            children: [
-              HeaderSrNoWidget(title: 'Sr.No'),
-              Expanded(child: HeaderWidget(title: 'Item Id')),
-              Expanded(child: HeaderWidget(title: 'Item Name')),
-              Expanded(child: HeaderWidget(title: 'Category')),
-              Expanded(child: HeaderWidget(title: 'Subcategory')),
-              Expanded(child: HeaderWidget(title: 'Price (INR)')),
-              Expanded(child: HeaderWidget(title: 'Specifications')),
-              Expanded(child: HeaderWidget(title: 'Image')),
-              SizedBox(width: 24), // Space for remove icon
-            ],
-          ),
+          _buildHeaderRow(),
           Divider(thickness: 2, color: Colors.grey[400]),
           Expanded(
             child: _isLoading
-                ? _loadingBubble()
+                ? LoadingWidget()
                 : ListView.builder(
               itemCount: gridItems.length,
               itemBuilder: (context, index) {
-                return _buildRow(index);
+                return GridRowWidget(
+                  index: index,
+                  item: gridItems[index],
+                  onRemove: _removeRow,
+                  onGridRowImageUploaded: (List<String> imageUrls) {
+                   setState(() {
+                     gridItems[index].images.clear();
+                     gridItems[index].images.addAll(imageUrls);
+                   });
+                },
+                );
               },
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CustomElevatedButton(onPressed: _uploadFromExcel, text: 'Upload From Excel'),
-              const SizedBox(width: 16),
-              CustomElevatedButton(onPressed: _addRow, text: 'Add Row'),
-              const SizedBox(width: 16),
-              CustomElevatedButton(onPressed: _deleteAll, text: 'Delete All'),
-              const Spacer(),
-              CustomElevatedButton(onPressed: saveChanges, text: 'Save Changes'),
-              const SizedBox(width: 16),
-              CustomElevatedButton(onPressed: downloadExcel, text: 'Download To Excel'),
-              const SizedBox(width: 16),
-              CustomElevatedButton(onPressed: downloadLatestFromServer, text: 'Download Latest From Server'),
-            ],
-          ),
+          _buildActionButtons(),
         ],
       ),
     );
   }
 
-  Widget _loadingBubble() {
-    return Center(
-      child: Container(
-        padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.blueAccent,
-          borderRadius: BorderRadius.circular(8),
+  Widget _buildHeaderRow() {
+    return const Row(
+      children: [
+        HeaderSrNoWidget(title: 'Sr.No'),
+        Expanded(child: HeaderWidget(title: 'Item Id')),
+        Expanded(child: HeaderWidget(title: 'Item Name')),
+        Expanded(child: HeaderWidget(title: 'Category')),
+        Expanded(child: HeaderWidget(title: 'Subcategory')),
+        Expanded(child: HeaderWidget(title: 'Price (INR)')),
+        Expanded(child: HeaderWidget(title: 'Specifications')),
+        Expanded(child: HeaderWidget(title: 'Image')),
+        SizedBox(width: 24),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ButtonWidget(
+          text: 'Upload From Excel',
+          onPressed: () async {
+            await _uploadFromExcel();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Excel file uploaded successfully')),
+            );
+          },
         ),
-        child: Text(
-          "Data is loading...",
-          style: TextStyle(color: Colors.white, fontSize: 16),
+
+        const SizedBox(width: 16),
+        ButtonWidget(text: 'Add Row', onPressed: _addRow),
+        const SizedBox(width: 16),
+        ButtonWidget(text: 'Delete All', onPressed: _deleteAll),
+        const Spacer(),
+        ButtonWidget(
+          text: 'Save Changes',
+          onPressed: () async {
+            bool success = await GridItemService.saveChanges(gridItems);
+            if (success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Changes saved successfully')),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Failed to save changes')),
+              );
+            }
+          },
         ),
-      ),
-    );
-  }
 
-  Widget _buildRow(int index) {
-    final item = gridItems[index];
-    logger.d('Building row for index: $index with item: ${item.itemId}');
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Container(width: 40, child: TextCell(text: (index + 1).toString())),
-          Expanded(flex: 1, child: EditableTextCell(text: item.itemId, onChanged: (value) {
-            logger.d('Item Id changed to: $value at index: $index');
-            item.itemId = value;
-          })),
-          Expanded(child: EditableTextCell(text: item.itemDescription, onChanged: (value) {
-            logger.d('Item Description changed to: $value at index: $index');
-            item.itemDescription = value;
-          })),
-          Expanded(child: EditableTextCell(text: item.category, onChanged: (value) {
-            logger.d('Category changed to: $value at index: $index');
-            item.category = value;
-          })),
-          Expanded(child: EditableTextCell(text: item.subCategory, onChanged: (value) {
-            logger.d('Subcategory changed to: $value at index: $index');
-            item.subCategory = value;
-          })),
-          Expanded(child: EditableTextCell(text: item.price, onChanged: (value) {
-            logger.d('Price changed to: $value at index: $index');
-            item.price = value;
-          })),
-          Expanded(child: EditableTextCell(text: item.remarks, onChanged: (value) {
-            logger.d('Specifications changed to: $value at index: $index');
-            item.remarks = value;
-          })),
-          Expanded(
-            child: Align(
-              alignment: Alignment.center,
-              child: _buildImageCell(item),
-            ),
-          ),
-          RemoveRowButton(index: index, onPressed: () => _removeRow(index)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImageCell(GridItem item) {
-    logger.d('Building image cell for item: ${item.itemId}');
-    return GestureDetector(
-      onTap: () async {
-        html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
-        uploadInput.accept = 'image/*';
-        uploadInput.multiple = true;
-        uploadInput.click();
-
-        uploadInput.onChange.listen((e) async {
-          final files = uploadInput.files;
-          for (var file in files!) {
-            await processFileUpload(file, item);
-          }
-        });
-      },
-      child: Stack(
-        children: [
-          Container(
-            height: 100,
-            width: 400,
-            margin: const EdgeInsets.symmetric(horizontal: 4.0),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: item.images.isEmpty
-                ? Center(
-              child: Text(
-                'Click to Upload Image',
-                style: TextStyle(fontSize: 16, color: Colors.blueGrey[400]),
-              ),
-            )
-                : ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(item.images[0], fit: BoxFit.cover),
-            ),
-          ),
-          if (item.images.isNotEmpty)
-            ClearImageButton(clearImage: (item) {
-              setState(() {
-                item.images = [];
-              });
-            }, item: item),
-        ],
-      ),
+        const SizedBox(width: 16),
+        ButtonWidget(
+          text: 'Download To Excel',
+          onPressed: () async {
+            await GridItemService.downloadExcel(gridItems);
+          },
+        ),
+        const SizedBox(width: 16),
+        ButtonWidget(text: 'Download Latest From Server',  onPressed: () async {
+          await GridItemService.downloadLatestFromServer();
+        },),
+      ],
     );
   }
 
@@ -219,146 +153,6 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     });
   }
 
-  Future<void> processFileUpload(file, item) async {
-    final reader = html.FileReader();
-    reader.readAsArrayBuffer(file);
-
-    reader.onLoadEnd.listen((e) async {
-      try {
-        final presignedUrl = await getPresignedUrl(file.name);
-        logger.d('Presigned URL obtained: $presignedUrl');
-        await uploadToS3(presignedUrl, reader.result as List<int>);
-        logger.d('Image uploaded successfully for item: ${item.itemId}');
-        setState(() {
-          if (item.images == null) {
-            item.images = [];
-          }
-          item.images.add(presignedUrl.split('?').first);
-        });
-      } catch (e) {
-        logger.e('Error during upload for item: ${item.itemId}, error: $e');
-      }
-    });
-  }
-
-  Future<String> getPresignedUrl(String fileName) async {
-    var apiGatewayUrl = dotenv.env["API_GATEWAY_URL"];
-    try {
-      final response = await http.post(
-        Uri.parse(apiGatewayUrl!),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'file_name': fileName}),
-      );
-
-      if (response.statusCode == 200) {
-        final presignedUrl = jsonDecode(response.body)['presignedUrl'];
-        logger.d('Received presigned URL: $presignedUrl');
-        return presignedUrl;
-      } else {
-        throw Exception('Failed to get presigned URL');
-      }
-    } catch (e) {
-      logger.e('Error fetching presigned URL for file: $fileName, error: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> downloadExcel() async {
-    logger.d('Downloading Excel file');
-    final excel = Excel.createExcel();
-    final sheet = excel['Sheet1'];
-
-    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory', 'Price', 'Specifications', 'Image']);
-
-    for (var item in gridItems) {
-      sheet.appendRow([
-        item.itemId,
-        item.itemDescription,
-        item.category,
-        item.subCategory,
-        item.price,
-        item.remarks,
-        item.images.join(",")
-      ]);
-    }
-
-    excel.save();
-    logger.d('Excel file downloaded successfully');
-  }
-
-  Future<void> saveChanges() async {
-    logger.d('Saving changes');
-    final excel = Excel.createExcel();
-    final sheet = excel['Sheet1'];
-
-    sheet.appendRow(['Item Id', 'Item Description', 'Category', 'Subcategory', 'Price', 'Specifications', 'Image']);
-
-    for (var item in gridItems) {
-      sheet.appendRow([
-        item.itemId,
-        item.itemDescription,
-        item.category,
-        item.subCategory,
-        item.price,
-        item.remarks,
-        item.images.join(",")
-      ]);
-    }
-
-    final bytes = excel.encode();
-    if (bytes != null) {
-      var fileName = dotenv.env['SERVER_EXCEL_NAME'];
-      try {
-        final presignedUrl = await getPresignedUrl(fileName!);
-        await uploadToS3(presignedUrl, bytes);
-        logger.d('Changes saved successfully to $fileName');
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Changes saved successfully')));
-      } catch (e) {
-        logger.e('Error saving changes: $e');
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save changes')));
-      }
-    } else {
-      logger.e('Failed to encode Excel file');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save changes')));
-    }
-  }
-
-  Future<void> uploadToS3(String presignedUrl, List<int> fileBytes) async {
-    logger.d('Uploading to S3 with URL: $presignedUrl');
-    try {
-      await http.put(
-        Uri.parse(presignedUrl),
-        body: fileBytes,
-      );
-      logger.d('Upload to S3 completed');
-    } catch (e) {
-      logger.e('Error uploading to S3: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> downloadLatestFromServer() async {
-    logger.d('Downloading latest data from server');
-    try {
-      var s3excelUrl = dotenv.env['SERVER_EXCEL_URL'];
-      final downloadResponse = await http.get(Uri.parse(s3excelUrl!));
-      if (downloadResponse.statusCode == 200) {
-        final blob = html.Blob([downloadResponse.bodyBytes]);
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        html.AnchorElement(href: url)
-          ..setAttribute('download', 'latest_grid_data.xlsx')
-          ..click();
-        html.Url.revokeObjectUrl(url);
-        logger.d('Latest data downloaded successfully');
-      } else {
-        throw Exception('Failed to download the file');
-      }
-    } catch (e) {
-      logger.e('Error downloading latest data from server: $e');
-      rethrow;
-    }
-  }
-
   void _removeRow(int index) {
     logger.d('Removing row at index: $index');
     setState(() {
@@ -366,108 +160,20 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     });
   }
 
-  Future<Uint8List> streamExcelData(String s3Url) async {
-    logger.d('Streaming Excel data from URL: $s3Url');
-    final response = await http.get(Uri.parse(s3Url), headers: {
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache',
-    });
-    if (response.statusCode == 200) {
-      logger.d('Excel data streamed successfully');
-      return response.bodyBytes;
-    } else {
-      logger.e('Failed to load Excel data: ${response.statusCode}');
-      return Uint8List(0);
-    }
-  }
-
-  Future<void> _fetchDataonPageLoad() async {
+  Future<void> _fetchDataOnPageLoad() async {
     logger.d('Fetching data on page load');
-    var s3excelUrl = dotenv.env['SERVER_EXCEL_URL'];
-    logger.d('SERVER_EXCEL_URL=' + s3excelUrl!);
-
-    // Simulating loading time
-    await Future.delayed(const Duration(seconds: 1));
-
-    final data = await streamExcelData(s3excelUrl);
-    var excelFile;
-
-    if (data.isNotEmpty && data.length > 0) {
-      excelFile = Excel.decodeBytes(data);
-      setState(() {
-        gridItems.clear();
-        final sheet = excelFile.tables[excelFile.tables.keys.first];
-        if (sheet != null) {
-          for (var row in sheet.rows.skip(1)) {
-            String excelItemid = row[0]?.value?.toString() ?? '';
-            String excelItemdescription = row[1]?.value?.toString() ?? '';
-            String excelCategory = row[2]?.value?.toString() ?? '';
-            String excelSubcategory = row[3]?.value?.toString() ?? '';
-            String price = row[4]?.value?.toString() ?? '';
-            String remarks = row[5]?.value?.toString() ?? '';
-            String excelImages = row[6]?.value?.toString() ?? '';
-            gridItems.add(GridItem(
-              itemId: excelItemid,
-              itemDescription: excelItemdescription,
-              images: excelImages.split(","),
-              category: excelCategory,
-              subCategory: excelSubcategory,
-              price: price,
-              remarks: remarks,
-            ));
-          }
-        }
-        _isLoading = false; // Set loading to false after data is fetched
-      });
-      logger.d('Data fetched and gridItems updated');
-    } else {
-      logger.e('Data fetched is empty');
-      setState(() {
-        _isLoading = false; // Ensure loading is false even if no data
-      });
-    }
-  }
-
-  Future<void> _uploadFromExcel() async {
-    logger.d('Uploading from Excel');
-    html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
-    uploadInput.accept = '.xlsx';
-    uploadInput.click();
-    uploadInput.onChange.listen((e) {
-      final files = uploadInput.files;
-      if (files?.length == 1) {
-        final reader = html.FileReader();
-        reader.readAsArrayBuffer(files![0]);
-        reader.onLoadEnd.listen((e) {
-          final excelFile = Excel.decodeBytes(reader.result as Uint8List);
-          setState(() {
-            gridItems.clear();
-            final sheet = excelFile.tables[excelFile.tables.keys.first];
-            if (sheet != null) {
-              for (var row in sheet.rows.skip(1)) {
-                String excelItemid = row[0]?.value?.toString() ?? '';
-                String excelItemdescription = row[1]?.value?.toString() ?? '';
-                String excelCategory = row[2]?.value?.toString() ?? '';
-                String excelSubcategory = row[3]?.value?.toString() ?? '';
-                String price = row[4]?.value?.toString() ?? '';
-                String remarks = row[5]?.value?.toString() ?? '';
-                String excelImages = row[6]?.value?.toString() ?? '';
-
-                gridItems.add(GridItem(
-                  itemId: excelItemid,
-                  itemDescription: excelItemdescription,
-                  category: excelCategory,
-                  subCategory: excelSubcategory,
-                  price: price,
-                  remarks: remarks,
-                  images: excelImages.split(","),
-                ));
-              }
-            }
-          });
-          logger.d('Uploaded from Excel and gridItems updated');
-        });
-      }
+    final data = await GridItemService.fetchGridData();
+    setState(() {
+      gridItems = data;
+      _isLoading = false;
     });
   }
+  Future<void> _uploadFromExcel() async {
+    List<GridItem> items = await GridItemService.uploadFromExcel();
+    setState(() {
+      gridItems.clear();
+      gridItems.addAll(items); // Update gridItems with new data
+    });
+  }
+
 }
