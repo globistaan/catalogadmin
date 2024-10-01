@@ -4,14 +4,23 @@ import '../image/image_cell_widget.dart';
 import '../model/grid_item.dart';
 import 'editable_text_cell.dart';
 
-
 class GridRowWidget extends StatelessWidget {
   final int index;
   final GridItem item;
   final Function(int) onRemove;
   final Function(List<String>) onGridRowImageUploaded;
   final Function() onGridRowImageUploadFailed;
-  const GridRowWidget({required this.index, required this.item, required this.onRemove, Key? key, required this.onGridRowImageUploaded, required this.onGridRowImageUploadFailed}) : super(key: key);
+  final Function(int) onApply; // Add this line
+
+  const GridRowWidget({
+    required this.index,
+    required this.item,
+    required this.onRemove,
+    required this.onGridRowImageUploaded,
+    required this.onGridRowImageUploadFailed,
+    required this.onApply, // Add this line
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -29,9 +38,23 @@ class GridRowWidget extends StatelessWidget {
           Expanded(child: EditableTextCell(text: item.dimension ?? '', onChanged: (value) => item.dimension = value)),
           Expanded(child: EditableTextCell(text: item.unit ?? '', onChanged: (value) => item.unit = value)),
           Expanded(child: EditableTextCell(text: item.mapSlotPrice ?? '', onChanged: (value) => item.mapSlotPrice = value)),
-          Expanded(child: ImageCellWidget(item: item, onImageUploaded: (imageUrls){
+          // New Apply Button
+          ElevatedButton(
+            child: Text("Apply"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor:  Colors.blue, // Background color
+              textStyle: TextStyle(color: Colors.white),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.zero, // Sharp edges
+              ),
+            ), onPressed: () {
+              onApply(index);
+              },
+          ),
+
+          Expanded(child: ImageCellWidget(item: item, onImageUploaded: (imageUrls) {
             onGridRowImageUploaded(imageUrls);
-          },onImageUploadFailed: () {
+          }, onImageUploadFailed: () {
             onGridRowImageUploadFailed();
           })),
           RemoveRowButton(index: index, onPressed: () => onRemove(index)),
@@ -39,4 +62,5 @@ class GridRowWidget extends StatelessWidget {
       ),
     );
   }
+
 }

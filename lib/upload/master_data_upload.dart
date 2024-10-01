@@ -50,28 +50,53 @@ class _MasterDataUpload extends State<MasterDataUpload> {
             child: _isLoading
                 ? LoadingWidget()
                 : ListView.builder(
-              itemCount: gridItems.length,
-              itemBuilder: (context, index) {
-                  return GridRowWidget(
-                  index: index,
-                  item: gridItems[index],
-                  onRemove: _removeRow,
-                  onGridRowImageUploaded: (List<String> imageUrls) {
-                   setState(() {
-                     gridItems[index].images.clear();
-                     gridItems[index].images.addAll(imageUrls);
-                   });
-                   ScaffoldMessenger.of(context).showSnackBar(
-                     const SnackBar(content: Text('Image(s) uploaded successfully')),
-                   );
-                }, onGridRowImageUploadFailed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Image(s) upload failed'))
-                  );
-                },
-                );
-              },
-            ),
+                    itemCount: gridItems.length,
+                    itemBuilder: (context, index) {
+                      return GridRowWidget(
+                        index: index,
+                        item: gridItems[index],
+                        onRemove: _removeRow,
+                        onGridRowImageUploaded: (List<String> imageUrls) {
+                          setState(() {
+                            gridItems[index].images.clear();
+                            gridItems[index].images.addAll(imageUrls);
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text('Image(s) uploaded successfully')),
+                          );
+                        },
+                        onGridRowImageUploadFailed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Image(s) upload failed')),
+                          );
+                        },
+                        onApply: (int index) {
+                          final currentItem = gridItems[index];
+                          if (currentItem.category == null) return;
+                          setState(() {
+                            // Wrap the entire loop in a single setState
+                            for (var i = 0; i < gridItems.length; i++) {
+                              // var item = gridItems[i];
+                              if (gridItems[i].category == currentItem.category && gridItems[i].itemId != currentItem.itemId) {
+                                gridItems[i].dimension = currentItem.dimension;
+                                gridItems[i].unit = currentItem.unit;
+                                gridItems[i].mapSlotPrice = currentItem
+                                    .mapSlotPrice; // Copy price slot mapping
+                              }
+                            }
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    'Applied dimensions, unit, and slot mapping to all products in the same category')),
+                          );
+
+                        },
+                      );
+                    },
+                  ),
           ),
           const SizedBox(height: 16),
           _buildActionButtons(),
@@ -92,7 +117,10 @@ class _MasterDataUpload extends State<MasterDataUpload> {
         Expanded(child: HeaderWidget(title: 'Specifications')),
         Expanded(child: HeaderWidget(title: 'Dimension')),
         Expanded(child: HeaderWidget(title: 'Unit')),
-        Expanded(child: HeaderWidget(title: 'Slot/Price Map (slot1:price1,slot2:price2}')),
+        Expanded(
+            child: HeaderWidget(
+                title: 'Slot/Price Map (slot1:price1,slot2:price2)')),
+        Expanded(child: HeaderWidget(title: 'Apply')), // New header for Apply
         Expanded(child: HeaderWidget(title: 'Image')),
         SizedBox(width: 24),
       ],
@@ -112,7 +140,6 @@ class _MasterDataUpload extends State<MasterDataUpload> {
             );
           },
         ),
-
         const SizedBox(width: 16),
         ButtonWidget(text: 'Add Row', onPressed: _addRow),
         const SizedBox(width: 16),
@@ -133,7 +160,6 @@ class _MasterDataUpload extends State<MasterDataUpload> {
             }
           },
         ),
-
         const SizedBox(width: 16),
         ButtonWidget(
           text: 'Download To Excel',
@@ -142,9 +168,12 @@ class _MasterDataUpload extends State<MasterDataUpload> {
           },
         ),
         const SizedBox(width: 16),
-        ButtonWidget(text: 'Download Latest From Server',  onPressed: () async {
-          await GridItemService.downloadLatestFromServer();
-        },),
+        ButtonWidget(
+          text: 'Download Latest From Server',
+          onPressed: () async {
+            await GridItemService.downloadLatestFromServer();
+          },
+        ),
       ],
     );
   }
@@ -159,7 +188,12 @@ class _MasterDataUpload extends State<MasterDataUpload> {
   void _addRow() {
     logger.d('Adding a new row');
     setState(() {
-      gridItems.add(GridItem(itemId: '', itemDescription: '', category: '', subCategory: '', images: []));
+      gridItems.add(GridItem(
+          itemId: '',
+          itemDescription: '',
+          category: '',
+          subCategory: '',
+          images: []));
     });
   }
 
@@ -178,6 +212,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
       _isLoading = false;
     });
   }
+
   Future<void> _uploadFromExcel() async {
     List<GridItem> items = await GridItemService.uploadFromExcel();
     setState(() {
@@ -185,5 +220,4 @@ class _MasterDataUpload extends State<MasterDataUpload> {
       gridItems.addAll(items); // Update gridItems with new data
     });
   }
-
 }
