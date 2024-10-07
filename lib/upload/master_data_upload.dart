@@ -10,7 +10,9 @@ import '../service/grid_item_service.dart';
 import '../snackbar/top_snackbar.dart';
 
 class MasterDataUpload extends StatefulWidget {
-  const MasterDataUpload({super.key});
+
+  final ValueNotifier<String> searchQueryNotifier;
+   MasterDataUpload({super.key, required this.searchQueryNotifier});
 
   @override
   _MasterDataUpload createState() => _MasterDataUpload();
@@ -18,14 +20,22 @@ class MasterDataUpload extends StatefulWidget {
 
 class _MasterDataUpload extends State<MasterDataUpload> {
   final logger = Logger();
+  List<GridItem> filteredGridItems = [];
   List<GridItem> gridItems = [];
-  bool _isLoading = true;
 
+  bool _isLoading = true;
+ 
   @override
   void initState() {
     super.initState();
     logger.d('initState called');
     _fetchDataOnPageLoad();
+    widget.searchQueryNotifier.addListener(() {
+      setState(() {
+        _filteredGridItems();
+      });
+      // Update UI on search query change
+    });
   }
 
   @override
@@ -48,16 +58,18 @@ class _MasterDataUpload extends State<MasterDataUpload> {
             child: _isLoading
                 ? LoadingWidget()
                 : ListView.builder(
-                    itemCount: gridItems.length,
+                    itemCount: filteredGridItems.length,
                     itemBuilder: (context, index) {
                       return GridRowWidget(
                         index: index,
-                        item: gridItems[index],
-                        onRemove: _removeRow,
+                        item: filteredGridItems[index],
+                        onRemove: (index){
+                          _removeRow(index);
+                      },
                         onGridRowImageUploaded: (List<String> imageUrls) {
                           setState(() {
-                            gridItems[index].images.clear();
-                            gridItems[index].images.addAll(imageUrls);
+                            filteredGridItems[index].images.clear();
+                            filteredGridItems[index].images.addAll(imageUrls);
                           });
                           TopSnackBar.show(context, 'Image(s) uploaded successfully');
                         },
@@ -65,16 +77,16 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                           TopSnackBar.show(context, 'Image(s) upload failed');
                         },
                         onApply: (int index) {
-                          final currentItem = gridItems[index];
+                          final currentItem = filteredGridItems[index];
                           if (currentItem.category == null) return;
                           setState(() {
                             // Wrap the entire loop in a single setState
-                            for (var i = 0; i < gridItems.length; i++) {
-                              // var item = gridItems[i];
-                              if (gridItems[i].category == currentItem.category && gridItems[i].itemId != currentItem.itemId) {
-                                gridItems[i].dimension = currentItem.dimension;
-                                gridItems[i].unit = currentItem.unit;
-                                gridItems[i].mapSlotPrice = currentItem
+                            for (var i = 0; i < filteredGridItems.length; i++) {
+                              // var item = filteredGridItems[i];
+                              if (filteredGridItems[i].category == currentItem.category && filteredGridItems[i].itemId != currentItem.itemId) {
+                                filteredGridItems[i].dimension = currentItem.dimension;
+                                filteredGridItems[i].unit = currentItem.unit;
+                                filteredGridItems[i].mapSlotPrice = currentItem
                                     .mapSlotPrice; // Copy price slot mapping
                               }
                             }
@@ -114,6 +126,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     );
   }
 
+
   Widget _buildActionButtons() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -133,7 +146,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
         ButtonWidget(
           text: 'Save Changes',
           onPressed: () async {
-            bool success = await GridItemService.saveChanges(gridItems);
+            bool success = await GridItemService.saveChanges(filteredGridItems);
             if (success) {
               TopSnackBar.show(context, 'Changes saved successfully');
             } else {
@@ -145,7 +158,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
         ButtonWidget(
           text: 'Download To Excel',
           onPressed: () async {
-            await GridItemService.downloadExcel(gridItems);
+            await GridItemService.downloadExcel(filteredGridItems);
           },
         ),
         const SizedBox(width: 16),
@@ -159,17 +172,31 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     );
   }
 
+  void _filteredGridItems() {
+    final searchText = widget.searchQueryNotifier.value.toLowerCase();
+     filteredGridItems = searchText.isEmpty
+        ? gridItems
+        : gridItems.where((item) {
+      final searchTextLower = searchText.toLowerCase();
+   return item.itemId.toLowerCase().contains(searchTextLower) ||
+          item.itemDescription.toLowerCase().contains(searchTextLower) ||
+          (item.category?.toLowerCase() ?? '').contains(searchTextLower) ||
+          (item.subCategory?.toLowerCase() ?? '').contains(searchTextLower);
+    }).toList();
+
+  }
+
   void _deleteAll() {
     logger.d('Deleting all rows');
     setState(() {
-      gridItems.clear();
+      filteredGridItems.clear();
     });
   }
 
   void _addRow() {
     logger.d('Adding a new row');
     setState(() {
-      gridItems.add(GridItem(
+      filteredGridItems.add(GridItem(
           itemId: '',
           itemDescription: '',
           category: '',
@@ -181,7 +208,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
   void _removeRow(int index) {
     logger.d('Removing row at index: $index');
     setState(() {
-      gridItems.removeAt(index);
+      filteredGridItems.removeAt(index);
     });
   }
 
@@ -189,7 +216,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     logger.d('Fetching data on page load');
     final data = await GridItemService.fetchGridData();
     setState(() {
-      gridItems = data;
+      filteredGridItems = gridItems = data;
       _isLoading = false;
     });
   }
@@ -197,8 +224,8 @@ class _MasterDataUpload extends State<MasterDataUpload> {
   Future<void> _uploadFromExcel() async {
     List<GridItem> items = await GridItemService.uploadFromExcel();
     setState(() {
-      gridItems.clear();
-      gridItems.addAll(items); // Update gridItems with new data
+      filteredGridItems.clear();
+      filteredGridItems.addAll(items); // Update filteredGridItems with new data
     });
   }
 }

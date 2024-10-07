@@ -3,13 +3,15 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webcatalogmaster/upload/master_data_upload.dart';
 
-void main() async{
+void main() async {
   await dotenv.load(fileName: ".env");
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+
+  final ValueNotifier<String> searchQueryNotifier = ValueNotifier<String>(''); // Notifier for search query
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +20,24 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.blue,
-          title: const Text(
-            'Product Master Data',
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+          title: Row(
+            children: [
+              // Search TextField with search icon
+              IntrinsicWidth(
+                child: SearchField(
+                  onSearchChanged: (value) {
+                    searchQueryNotifier.value = value; // Update the search query
+                  },
+                ),
+              ),
+          //    const SizedBox(width: 5), // Spacing between search field and title
+              const Spacer(),
+              const Text(
+                'Product Master Data',
+                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+            ],
           ),
           actions: [
             TextButton(
@@ -39,9 +56,35 @@ class MyApp extends StatelessWidget {
             ),
           ],
         ),
-        body: const MasterDataUpload(),
+        body: MasterDataUpload(searchQueryNotifier: searchQueryNotifier), // Pass the notifier to the child
       ),
     );
   }
 }
 
+class SearchField extends StatelessWidget {
+  final ValueChanged<String> onSearchChanged; // Callback function
+  const SearchField({super.key, required this.onSearchChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      decoration: InputDecoration(
+        hintText: 'Search by Item Id, Item Name, Category, Subcategory',
+        hintStyle: TextStyle(color: Colors.white70),
+        filled: true,
+        fillColor: Colors.blue[800],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        prefixIcon: const Icon(
+          Icons.search,
+          color: Colors.white,
+        ),
+      ),
+      style: const TextStyle(color: Colors.white),
+      onChanged: onSearchChanged,
+    );
+  }
+}
