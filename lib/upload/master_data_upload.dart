@@ -60,17 +60,9 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                             gridItems[index].images.addAll(imageUrls);
                           });
                           TopSnackBar.show(context, 'Image(s) uploaded successfully');
-                         /* ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text('Image(s) uploaded successfully')),
-                          );*/
                         },
                         onGridRowImageUploadFailed: () {
                           TopSnackBar.show(context, 'Image(s) upload failed');
-                          /*ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Image(s) upload failed')),
-                          );*/
                         },
                         onApply: (int index) {
                           final currentItem = gridItems[index];
@@ -88,12 +80,6 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                             }
                           });
                           TopSnackBar.show(context, 'Applied dimensions, unit, and slot mapping to all products in the same category');
-                         /* ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    'Applied dimensions, unit, and slot mapping to all products in the same category')),
-                          );*/
-
                         },
                       );
                     },
@@ -137,10 +123,6 @@ class _MasterDataUpload extends State<MasterDataUpload> {
           onPressed: () async {
             await _uploadFromExcel();
             TopSnackBar.show(context, 'Excel file uploaded successfully');
-
-           /* ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Excel file uploaded successfully')),
-            );*/
           },
         ),
         const SizedBox(width: 16),
@@ -154,14 +136,8 @@ class _MasterDataUpload extends State<MasterDataUpload> {
             bool success = await GridItemService.saveChanges(gridItems);
             if (success) {
               TopSnackBar.show(context, 'Changes saved successfully');
-            /*  ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Changes saved successfully')),
-              );*/
             } else {
               TopSnackBar.show(context, 'Failed to save changes');
-           /*   ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Failed to save changes')),
-              );*/
             }
           },
         ),
