@@ -28,7 +28,7 @@ class GridRowWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
-          Container(width: 40, child: Text((index + 1).toString())),
+          Container(alignment: Alignment.center, width: 40, child: Text((index + 1).toString())),
           Expanded(child: EditableTextCell(text: item.itemId, onChanged: (value) => item.itemId = value)),
           Expanded(child: EditableTextCell(text: item.itemDescription, onChanged: (value) => item.itemDescription = value)),
           Expanded(child: EditableTextCell(text: item.category ?? '', onChanged: (value) => item.category = value)),

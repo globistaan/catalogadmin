@@ -95,18 +95,18 @@ class _MasterDataUpload extends State<MasterDataUpload> {
   Widget _buildHeaderRow() {
     return const Row(
       children: [
-        HeaderSrNoWidget(title: 'Sr.No'),
+        HeaderSrNoWidget(title: 'Sr No'),
         Expanded(child: HeaderWidget(title: 'Item Id')),
         Expanded(child: HeaderWidget(title: 'Item Name')),
         Expanded(child: HeaderWidget(title: 'Category')),
         Expanded(child: HeaderWidget(title: 'Subcategory')),
         Expanded(child: HeaderWidget(title: 'Price (INR)')),
-        Expanded(child: HeaderWidget(title: 'Specifications')),
+        Expanded(child: HeaderWidget(title: 'Specs')),
         Expanded(child: HeaderWidget(title: 'Dimension')),
         Expanded(child: HeaderWidget(title: 'Unit')),
         Expanded(
             child: HeaderWidget(
-                title: 'Slot/Price Map (slot1:price1,slot2:price2)')),
+                title: 'Slot:Price')),
         Expanded(child: HeaderWidget(title: 'Apply')), // New header for Apply
         Expanded(child: HeaderWidget(title: 'Image')),
         SizedBox(width: 24),
