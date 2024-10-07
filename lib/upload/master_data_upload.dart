@@ -1,7 +1,4 @@
-import 'dart:html' as html;
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter_excel/excel.dart';
 import 'package:logger/logger.dart';
 import '../buttons/button_widget.dart';
 import '../grid/grid_row_widget.dart';
@@ -10,6 +7,7 @@ import '../grid/header_serial_no.dart';
 import '../grid/loading_widget.dart';
 import '../model/grid_item.dart';
 import '../service/grid_item_service.dart';
+import '../snackbar/top_snackbar.dart';
 
 class MasterDataUpload extends StatefulWidget {
   const MasterDataUpload({super.key});
@@ -61,16 +59,18 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                             gridItems[index].images.clear();
                             gridItems[index].images.addAll(imageUrls);
                           });
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          TopSnackBar.show(context, 'Image(s) uploaded successfully');
+                         /* ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content:
                                     Text('Image(s) uploaded successfully')),
-                          );
+                          );*/
                         },
                         onGridRowImageUploadFailed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          TopSnackBar.show(context, 'Image(s) upload failed');
+                          /*ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Image(s) upload failed')),
-                          );
+                          );*/
                         },
                         onApply: (int index) {
                           final currentItem = gridItems[index];
@@ -87,11 +87,12 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                               }
                             }
                           });
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          TopSnackBar.show(context, 'Applied dimensions, unit, and slot mapping to all products in the same category');
+                         /* ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content: Text(
                                     'Applied dimensions, unit, and slot mapping to all products in the same category')),
-                          );
+                          );*/
 
                         },
                       );
@@ -135,9 +136,11 @@ class _MasterDataUpload extends State<MasterDataUpload> {
           text: 'Upload From Excel',
           onPressed: () async {
             await _uploadFromExcel();
-            ScaffoldMessenger.of(context).showSnackBar(
+            TopSnackBar.show(context, 'Excel file uploaded successfully');
+
+           /* ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Excel file uploaded successfully')),
-            );
+            );*/
           },
         ),
         const SizedBox(width: 16),
@@ -150,13 +153,15 @@ class _MasterDataUpload extends State<MasterDataUpload> {
           onPressed: () async {
             bool success = await GridItemService.saveChanges(gridItems);
             if (success) {
-              ScaffoldMessenger.of(context).showSnackBar(
+              TopSnackBar.show(context, 'Changes saved successfully');
+            /*  ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Changes saved successfully')),
-              );
+              );*/
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
+              TopSnackBar.show(context, 'Failed to save changes');
+           /*   ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Failed to save changes')),
-              );
+              );*/
             }
           },
         ),
