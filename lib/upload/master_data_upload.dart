@@ -20,7 +20,7 @@ class MasterDataUpload extends StatefulWidget {
 
 class _MasterDataUpload extends State<MasterDataUpload> {
   final logger = Logger();
-  List<GridItem> filteredGridItems = [];
+
   List<GridItem> gridItems = [];
 
   bool _isLoading = true;
@@ -32,7 +32,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     _fetchDataOnPageLoad();
     widget.searchQueryNotifier.addListener(() {
       setState(() {
-        _filteredGridItems();
+       // _filteredGridItems();
       });
       // Update UI on search query change
     });
@@ -40,6 +40,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
 
   @override
   Widget build(BuildContext context) {
+    List<GridItem> filteredGridItems = _filteredGridItems();
     logger.d('build called');
     return Container(
       padding: const EdgeInsets.all(16.0),
@@ -64,7 +65,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                         index: index,
                         item: filteredGridItems[index],
                         onRemove: (index){
-                          _removeRow(index);
+                          _removeRow(index, filteredGridItems);
                       },
                         onGridRowImageUploaded: (List<String> imageUrls) {
                           setState(() {
@@ -98,7 +99,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
                   ),
           ),
           const SizedBox(height: 16),
-          _buildActionButtons(),
+          _buildActionButtons(filteredGridItems),
         ],
       ),
     );
@@ -127,21 +128,25 @@ class _MasterDataUpload extends State<MasterDataUpload> {
   }
 
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(List<GridItem> filteredGridItems) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         ButtonWidget(
           text: 'Upload From Excel',
           onPressed: () async {
-            await _uploadFromExcel();
+            await _uploadFromExcel(filteredGridItems);
             TopSnackBar.show(context, 'Excel file uploaded successfully');
           },
         ),
         const SizedBox(width: 16),
-        ButtonWidget(text: 'Add Row', onPressed: _addRow),
+        ButtonWidget(text: 'Add Row', onPressed:(){
+          _addRow(filteredGridItems);
+        }),
         const SizedBox(width: 16),
-        ButtonWidget(text: 'Delete All', onPressed: _deleteAll),
+        ButtonWidget(text: 'Delete All', onPressed :(){
+          _deleteAll(filteredGridItems);
+        }),
         const Spacer(),
         ButtonWidget(
           text: 'Save Changes',
@@ -172,28 +177,27 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     );
   }
 
-  void _filteredGridItems() {
+  List<GridItem> _filteredGridItems() {
     final searchText = widget.searchQueryNotifier.value.toLowerCase();
-     filteredGridItems = searchText.isEmpty
+    final filteredGridItems = searchText.isEmpty
         ? gridItems
         : gridItems.where((item) {
-      final searchTextLower = searchText.toLowerCase();
-   return item.itemId.toLowerCase().contains(searchTextLower) ||
-          item.itemDescription.toLowerCase().contains(searchTextLower) ||
-          (item.category?.toLowerCase() ?? '').contains(searchTextLower) ||
-          (item.subCategory?.toLowerCase() ?? '').contains(searchTextLower);
+   return item.itemId.toLowerCase().contains(searchText) ||
+          item.itemDescription.toLowerCase().contains(searchText) ||
+          (item.category?.toLowerCase() ?? '').contains(searchText) ||
+          (item.subCategory?.toLowerCase() ?? '').contains(searchText);
     }).toList();
-
+    return filteredGridItems;
   }
 
-  void _deleteAll() {
+  void _deleteAll(filteredGridItems) {
     logger.d('Deleting all rows');
     setState(() {
       filteredGridItems.clear();
     });
   }
 
-  void _addRow() {
+  void _addRow(filteredGridItems) {
     logger.d('Adding a new row');
     setState(() {
       filteredGridItems.add(GridItem(
@@ -205,7 +209,7 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     });
   }
 
-  void _removeRow(int index) {
+  void _removeRow(int index,filteredGridItems) {
     logger.d('Removing row at index: $index');
     setState(() {
       filteredGridItems.removeAt(index);
@@ -216,12 +220,12 @@ class _MasterDataUpload extends State<MasterDataUpload> {
     logger.d('Fetching data on page load');
     final data = await GridItemService.fetchGridData();
     setState(() {
-      filteredGridItems = gridItems = data;
+       gridItems = data;
       _isLoading = false;
     });
   }
 
-  Future<void> _uploadFromExcel() async {
+  Future<void> _uploadFromExcel(filteredGridItems) async {
     List<GridItem> items = await GridItemService.uploadFromExcel();
     setState(() {
       filteredGridItems.clear();

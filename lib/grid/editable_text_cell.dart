@@ -35,6 +35,7 @@ class _EditableTextCellState extends State<EditableTextCell> {
 
   @override
   Widget build(BuildContext context) {
+    _controller = TextEditingController(text: widget.text);
     return MouseRegion(
       cursor: SystemMouseCursors.resizeUpDown, // Cursor for vertical dragging
       child: GestureDetector(
